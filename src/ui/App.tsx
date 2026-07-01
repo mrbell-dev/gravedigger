@@ -677,6 +677,7 @@ function QuickRef() {
     ["Joker", "Omen: peek & reorder the deck"],
     ["Burn", "discard 2 cards to remove an enemy"],
     ["Win / Lose", "clear deck & row / Stamina hits 0"],
+    ["Score", "keep stamina & tools, go fast, avoid rest/burn"],
   ];
   return (
     <div className="quickref">
@@ -984,13 +985,31 @@ function GameOver({
                   <span>{s.score.staminaBonus}</span>
                 </div>
                 <div>
-                  <span>{s.score.unusedCards} tools unused × {EFFICIENCY_MULT}</span>
+                  <span>
+                    {s.score.unusedCards} tools unused × {EFFICIENCY_MULT}
+                  </span>
                   <span>{s.score.efficiencyBonus}</span>
                 </div>
                 <div>
                   <span>Graveyard cleared</span>
                   <span>{s.score.clearBonus}</span>
                 </div>
+                <div>
+                  <span>Speed ({s.score.turns} turns)</span>
+                  <span>{s.score.speedBonus > 0 ? `+${s.score.speedBonus}` : "0"}</span>
+                </div>
+                {s.score.restPenalty > 0 && (
+                  <div className="score-penalty">
+                    <span>{s.score.rests} rests</span>
+                    <span>−{s.score.restPenalty}</span>
+                  </div>
+                )}
+                {s.score.burnPenalty > 0 && (
+                  <div className="score-penalty">
+                    <span>{s.score.burns} burns</span>
+                    <span>−{s.score.burnPenalty}</span>
+                  </div>
+                )}
                 <div className="score-mult">
                   <span>Difficulty</span>
                   <span>× {s.score.difficultyMult}</span>

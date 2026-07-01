@@ -38,6 +38,8 @@ export function setup(seed: number, decks = 1): GameState {
     ironFlipUsed: false,
     skipFlipNextTurn: false,
     skipSuffer: false,
+    restsUsed: 0,
+    burnsUsed: 0,
     status: { kind: "playing" },
     log: [{ turn: 1, phase: "flip", text: "The graveyard stirs. Your watch begins." }],
   };

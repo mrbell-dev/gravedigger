@@ -581,6 +581,9 @@ body {
 .score-lines > div span:last-child {
   color: var(--ink);
 }
+.score-lines .score-penalty span:last-child {
+  color: var(--red);
+}
 .score-lines .score-mult {
   border-bottom: none;
   color: var(--gold);

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { apply, validCombo, firingSuit, effectiveValue } from "./index";
+import { scoreWin } from "./status";
 import { makeEnemy } from "./enemy";
 import type { GameState, Card, Suit, Enemy } from "./types";
 
@@ -31,6 +32,8 @@ const base = (o: Partial<GameState>): GameState => ({
   ironFlipUsed: false,
   skipFlipNextTurn: false,
   skipSuffer: false,
+  restsUsed: 0,
+  burnsUsed: 0,
   status: { kind: "playing" },
   log: [],
   ...o,
@@ -167,38 +170,43 @@ describe("♣ Salt — Suppress", () => {
 });
 
 describe("scoring a win", () => {
-  it("rewards leftover stamina and unused hand cards, scaled by difficulty", () => {
-    // One enemy, empty deck: killing it wins immediately. Hand keeps its other cards.
+  it("breaks down stamina, efficiency, speed, and penalties", () => {
+    // 1 deck, turn 20, 6 stamina, 2 tools unused, 2 rests + 1 burn taken.
     const s = base({
-      stamina: 7,
-      hand: [C("C", 9), C("S", 2), C("S", 3)], // kill with the 9♣, leaving 2 tools unused
-      row: [en("H", 6)],
-      deck: [],
+      decks: 1,
+      turn: 20,
+      stamina: 6,
+      hand: [C("S", 2), C("S", 3)],
+      restsUsed: 2,
+      burnsUsed: 1,
     });
-    const after = apply(s, { type: "smite", cardIds: ["C9"], targetId: "H6", chosenSuit: "C" });
-    expect(after.status.kind).toBe("won");
-    if (after.status.kind === "won") {
-      const sc = after.status.score;
-      expect(sc.unusedCards).toBe(2); // S2 + S3 remain
-      // (7*10 stamina + 2*25 efficiency + 100 clear) * 1 deck = 220
-      expect(sc.total).toBe(220);
-    }
+    const sc = scoreWin(s);
+    expect(sc.staminaBonus).toBe(60); // 6 * 10
+    expect(sc.efficiencyBonus).toBe(50); // 2 * 25
+    expect(sc.clearBonus).toBe(100);
+    expect(sc.speedBonus).toBe((30 - 20) * 2); // par 30 - 20 turns = 10, *2 = 20
+    expect(sc.restPenalty).toBe(30); // 2 * 15
+    expect(sc.burnPenalty).toBe(20); // 1 * 20
+    // subtotal = 60+50+100+20 - 30 - 20 = 180, *1 deck
+    expect(sc.total).toBe(180);
   });
 
-  it("multiplies by deck count", () => {
-    const s = base({
-      decks: 3,
-      stamina: 5,
-      hand: [C("C", 9)],
-      row: [en("H", 6)],
-      deck: [],
-    });
-    const after = apply(s, { type: "smite", cardIds: ["C9"], targetId: "H6", chosenSuit: "C" });
-    if (after.status.kind === "won") {
-      // (5*10 + 0*25 + 100) * 3 = 450
-      expect(after.status.score.total).toBe(450);
-      expect(after.status.score.difficultyMult).toBe(3);
-    }
+  it("rewards a faster clear with more speed points", () => {
+    const fast = scoreWin(base({ turn: 10, stamina: 5, hand: [] }));
+    const slow = scoreWin(base({ turn: 28, stamina: 5, hand: [] }));
+    expect(fast.speedBonus).toBeGreaterThan(slow.speedBonus);
+  });
+
+  it("scales par and total with deck count", () => {
+    const sc = scoreWin(base({ decks: 3, turn: 40, stamina: 5, hand: [] }));
+    expect(sc.difficultyMult).toBe(3);
+    // par = 30*3 = 90; speed = (90-40)*2 = 100; subtotal = 50 + 100 clear + 100 speed = 250; *3
+    expect(sc.total).toBe(750);
+  });
+
+  it("floors the subtotal at 0 so heavy penalties never go negative", () => {
+    const sc = scoreWin(base({ turn: 100, stamina: 0, hand: [], restsUsed: 50, burnsUsed: 50 }));
+    expect(sc.total).toBe(0);
   });
 });
 

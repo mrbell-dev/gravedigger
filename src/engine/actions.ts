@@ -37,6 +37,7 @@ export function apply(state: GameState, action: Action): GameState {
       break;
     case "rest":
       gainStamina(s, 2);
+      s.restsUsed += 1;
       log(s, "You Rest. +2 Stamina.");
       s.phase = "suffer";
       break;
@@ -169,6 +170,7 @@ function resolveRitual(s: GameState, cardId: string): void {
 // --- Burn ---
 
 function resolveBurn(s: GameState, cardIds: string[], targetId: string): void {
+  s.burnsUsed += 1;
   discardFromHand(s, cardIds.slice(0, 2));
   const target = s.row.find((e) => e.id === targetId);
   if (target && target.role !== "lich") {

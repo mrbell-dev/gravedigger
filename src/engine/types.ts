@@ -39,13 +39,19 @@ export type Pending =
   | { kind: "salt-remove"; resumePhase: Phase } // Salt: choose which enemy loses a festering token
   | { kind: "discard"; downTo: number; resumePhase: Phase }; // trim an overfull hand by choice
 
-/** Point breakdown for a won game — rewards efficiency (stamina kept + tools unused). */
+/** Point breakdown for a won game — rewards efficiency, speed, and clean play. */
 export interface Score {
   staminaBonus: number; // stamina you finished with
   efficiencyBonus: number; // tools left unused in hand
   clearBonus: number; // flat reward for clearing the graveyard
+  speedBonus: number; // reward for finishing in fewer turns
+  restPenalty: number; // deducted per Rest taken
+  burnPenalty: number; // deducted per Burn taken
   difficultyMult: number; // ×1 per deck
   unusedCards: number; // raw count of cards left in hand
+  turns: number; // turns taken
+  rests: number; // Rests taken
+  burns: number; // Burns taken
   total: number;
 }
 
@@ -78,6 +84,9 @@ export interface GameState {
   skipFlipNextTurn: boolean; // an Iron chain-flip consumed the *next* turn's Flip
   skipSuffer: boolean; // set by a Joker revealed in Flip / Iron-flip
   silverDraws?: number; // cards still owed by Silver's mid-Act draw (resumable across an Omen)
+
+  restsUsed: number; // total Rests taken this game (scoring penalty)
+  burnsUsed: number; // total Burns taken this game (scoring penalty)
 
   status: Status;
 

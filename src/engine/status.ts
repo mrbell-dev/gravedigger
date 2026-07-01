@@ -8,18 +8,46 @@ import { maxStamina } from "./balance";
 const STAMINA_POINTS = 10; // per remaining stamina
 const EFFICIENCY_POINTS = 25; // per tool left unused in hand
 const CLEAR_BONUS = 100; // flat reward for winning
+const SPEED_POINTS = 2; // per turn faster than par
+const SPEED_PAR_PER_DECK = 30; // "par" turn count per deck; finishing under it earns speed points
+const REST_PENALTY = 15; // deducted per Rest (stalling)
+const BURN_PENALTY = 20; // deducted per Burn (skipping a fight by sacrificing tools)
 
 /**
- * Score a won game. Rewards finishing with high stamina and with tools still in hand (you cleared
- * the graveyard without needing to spend everything). Scaled by difficulty (deck count).
+ * Score a won game. Rewards: leftover stamina, tools left unused in hand, and a fast clear
+ * (fewer turns than par). Penalizes Rests (stalling) and Burns (skipping fights). Scaled by
+ * difficulty (deck count). The pre-multiplier subtotal is floored at 0 so heavy penalties can't
+ * produce a negative score.
  */
 export function scoreWin(state: GameState): Score {
   const unusedCards = state.hand.length; // deck is empty at a win; hand = tools never spent
   const staminaBonus = state.stamina * STAMINA_POINTS;
   const efficiencyBonus = unusedCards * EFFICIENCY_POINTS;
+  const par = SPEED_PAR_PER_DECK * state.decks;
+  const speedBonus = Math.max(0, par - state.turn) * SPEED_POINTS;
+  const restPenalty = state.restsUsed * REST_PENALTY;
+  const burnPenalty = state.burnsUsed * BURN_PENALTY;
   const difficultyMult = state.decks;
-  const total = Math.round((staminaBonus + efficiencyBonus + CLEAR_BONUS) * difficultyMult);
-  return { staminaBonus, efficiencyBonus, clearBonus: CLEAR_BONUS, difficultyMult, unusedCards, total };
+
+  const subtotal = Math.max(
+    0,
+    staminaBonus + efficiencyBonus + CLEAR_BONUS + speedBonus - restPenalty - burnPenalty,
+  );
+  const total = Math.round(subtotal * difficultyMult);
+  return {
+    staminaBonus,
+    efficiencyBonus,
+    clearBonus: CLEAR_BONUS,
+    speedBonus,
+    restPenalty,
+    burnPenalty,
+    difficultyMult,
+    unusedCards,
+    turns: state.turn,
+    rests: state.restsUsed,
+    burns: state.burnsUsed,
+    total,
+  };
 }
 
 export function victoryTier(stamina: number, decks = 1): "gold" | "silver" | "bronze" {

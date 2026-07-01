@@ -35,6 +35,8 @@ const base = (o: Partial<GameState>): GameState => ({
   ironFlipUsed: false,
   skipFlipNextTurn: false,
   skipSuffer: false,
+  restsUsed: 0,
+  burnsUsed: 0,
   status: { kind: "playing" },
   log: [],
   ...o,
