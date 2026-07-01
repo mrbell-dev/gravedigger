@@ -68,4 +68,24 @@ The engine (`src/engine/`) is a pure, deterministic, framework-free state machin
 
 TypeScript · React · Vite · Vitest · vite-plugin-pwa. Deployed to GitHub Pages via GitHub Actions.
 
-Third-party asset licenses are listed in [`ASSETS.md`](ASSETS.md).
+## Open-source acknowledgements
+
+The *game design* is @Pavornic's and is all rights reserved. The **digital implementation** gratefully
+uses these open-source projects and assets:
+
+**Fonts** (self-hosted via [Fontsource](https://fontsource.org), so the app works offline):
+- [**Pirata One**](https://fonts.google.com/specimen/Pirata+One) — SIL Open Font License 1.1 (titles).
+- [**EB Garamond**](https://fonts.google.com/specimen/EB+Garamond) — SIL Open Font License 1.1 (body).
+
+**Libraries:**
+- [React](https://react.dev) & React DOM — MIT
+- [Vite](https://vitejs.dev) & [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react) — MIT
+- [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) & [Workbox](https://developer.chrome.com/docs/workbox) — MIT
+- [marked](https://marked.js.org/) (renders the in-app rules) — MIT
+- [Vitest](https://vitest.dev), [fast-check](https://fast-check.dev), [Playwright](https://playwright.dev), [tsx](https://github.com/privatenumber/tsx), [TypeScript](https://www.typescriptlang.org) *(dev tooling)* — MIT / Apache-2.0
+
+**Sound & haptics:** procedurally generated in-browser via the Web Audio API and the Vibration API —
+no third-party audio files. App icon and suit glyphs are original artwork for this project.
+
+A machine-readable list is also in [`ASSETS.md`](ASSETS.md). If any attribution is missing or wrong,
+please open an issue.

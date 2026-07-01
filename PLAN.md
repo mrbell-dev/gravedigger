@@ -9,6 +9,13 @@ card game. Fully client-side, installable as a PWA, works offline.
 
 ## STATUS — updated 2026-07-01
 
+**SHIPPED (Phase 12, early):** Live at https://mrbell-dev.github.io/gravedigger/ · repo
+github.com/mrbell-dev/gravedigger (public, proprietary LICENSE, @Pavornic credited). CI auto-deploys
+on push to `main` (`.github/workflows/deploy.yml`); verified live render. Order was 10 → 9 → 11 → 12,
+but 12 was pulled forward for a shareable review link. STILL PENDING: **Phase 9 (juice)** and
+**Phase 11 (QA/a11y)**.
+
+
 **Tests:** 36 passing. **Balance sim:** 4000 games, 0 unfinished (no logic loops); heuristic bot win rate ~18.6% (Gold 8.0% / Silver 5.9% / Bronze 4.7%), losses 62% stamina / 19% no-move. Intentionally hard; bot is only greedy, revisit later.
 
 ### Done

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
 import "./styles.css";
 import rulesMarkdown from "../engine/RULES.md?raw";
@@ -28,6 +28,52 @@ import {
   type Stats,
 } from "./persist";
 
+import {
+  loadSettings,
+  saveSettings,
+  setSound,
+  setHaptics,
+  playCue,
+  buzz,
+  type Settings,
+} from "./fx";
+
+/** Count enemies laid to rest / destroyed in a transition (their cards move to discard). */
+function countKills(prev: GameState, next: GameState): number {
+  const wasEnemy = new Set(prev.row.map((e) => e.id));
+  const before = new Set(prev.discard.map((c) => c.id));
+  return next.discard.filter((c) => wasEnemy.has(c.id) && !before.has(c.id)).length;
+}
+
+/** Sound + haptic feedback for what a move produced. */
+function fireFeedback(prev: GameState, next: GameState, action: Action): void {
+  if (next.status.kind === "won") {
+    playCue("win");
+    buzz([0, 40, 60, 40, 120]);
+    return;
+  }
+  if (next.status.kind === "lost") {
+    playCue("lose");
+    buzz(220);
+    return;
+  }
+  const kills = countKills(prev, next);
+  if (action.type === "ritual") playCue("ritual");
+  else if (action.type === "burn") {
+    playCue("burn");
+    buzz(30);
+  }
+  if (kills > 0) {
+    playCue("kill");
+    buzz(25);
+  } else if (action.type === "smite") {
+    playCue("fester");
+    buzz(12);
+  }
+  if (next.pending?.kind === "reorder" && next.pending.source === "omen") playCue("omen");
+  if (next.stamina < prev.stamina) playCue("suffer");
+}
+
 /** Resume a saved game, honor a ?seed= link, or start fresh — in that priority. */
 function initialState(): GameState {
   const urlSeed = seedFromUrl();
@@ -56,6 +102,33 @@ export function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [comboSuit, setComboSuit] = useState<Suit | null>(null);
   const [stats, setStats] = useState<Stats>(loadStats);
+  const [settings, setSettingsState] = useState<Settings>(loadSettings);
+
+  // Push settings into the fx runtime whenever they change (and on first mount).
+  useEffect(() => {
+    setSound(settings.sound);
+    setHaptics(settings.haptics);
+  }, [settings]);
+
+  const updateSettings = (patch: Partial<Settings>) => {
+    setSettingsState((cur) => {
+      const next = { ...cur, ...patch };
+      saveSettings(next);
+      return next;
+    });
+  };
+
+  // Flash the Stamina stat when it changes (down = red, up = green).
+  const [staminaFlash, setStaminaFlash] = useState<"" | "up" | "down">("");
+  const prevStamina = useRef(state.stamina);
+  useEffect(() => {
+    if (state.stamina !== prevStamina.current) {
+      setStaminaFlash(state.stamina < prevStamina.current ? "down" : "up");
+      prevStamina.current = state.stamina;
+      const t = setTimeout(() => setStaminaFlash(""), 550);
+      return () => clearTimeout(t);
+    }
+  }, [state.stamina]);
 
   const clearSelection = () => {
     setSelected([]);
@@ -75,7 +148,11 @@ export function App() {
     }
   };
 
-  const dispatch = (action: Action) => commit(apply(state, action));
+  const dispatch = (action: Action) => {
+    const next = apply(state, action);
+    fireFeedback(state, next, action);
+    commit(next);
+  };
 
   const restart = (newSeed?: number) => {
     const g = newGame(newSeed ?? Math.floor(Math.random() * 1e9));
@@ -86,6 +163,8 @@ export function App() {
   };
 
   const toggleCard = (id: string) => {
+    playCue("select");
+    buzz(8);
     setComboSuit(null); // any change of selection resets the chosen combo power
     setSelected((cur) =>
       cur.includes(id) ? cur.filter((x) => x !== id) : cur.length >= 2 ? [cur[1], id] : [...cur, id],
@@ -145,7 +224,7 @@ export function App() {
 
       <InstallPrompt />
 
-      <StatusBar state={state} lich={lich} />
+      <StatusBar state={state} lich={lich} staminaFlash={staminaFlash} />
 
       <div className="hdr">The Graveyard Row</div>
       <div className="row">
@@ -262,6 +341,8 @@ export function App() {
         <MenuModal
           state={state}
           stats={stats}
+          settings={settings}
+          onChangeSettings={updateSettings}
           onClose={() => setMenuOpen(false)}
           onNewGame={() => restart()}
           onPlaySeed={(seed) => restart(seed)}
@@ -274,12 +355,16 @@ export function App() {
 function MenuModal({
   state,
   stats,
+  settings,
+  onChangeSettings,
   onClose,
   onNewGame,
   onPlaySeed,
 }: {
   state: GameState;
   stats: Stats;
+  settings: Settings;
+  onChangeSettings: (patch: Partial<Settings>) => void;
   onClose: () => void;
   onNewGame: () => void;
   onPlaySeed: (seed: number) => void;
@@ -336,6 +421,22 @@ function MenuModal({
         </div>
 
         <div className="menu-section">
+          <div className="menu-label">Atmosphere</div>
+          <div className="toggle-row">
+            <Toggle
+              label="Sound"
+              on={settings.sound}
+              onClick={() => onChangeSettings({ sound: !settings.sound })}
+            />
+            <Toggle
+              label="Haptics"
+              on={settings.haptics}
+              onClick={() => onChangeSettings({ haptics: !settings.haptics })}
+            />
+          </div>
+        </div>
+
+        <div className="menu-section">
           <div className="menu-label">Your watch</div>
           <div className="stats-grid">
             <Stat k="Played" v={stats.played} />
@@ -369,6 +470,17 @@ function Stat({ k, v }: { k: string; v: string | number }) {
   );
 }
 
+function Toggle({ label, on, onClick }: { label: string; on: boolean; onClick: () => void }) {
+  return (
+    <button className={"toggle" + (on ? " on" : "")} onClick={onClick} role="switch" aria-checked={on}>
+      <span className="toggle-label">{label}</span>
+      <span className="toggle-track">
+        <span className="toggle-knob" />
+      </span>
+    </button>
+  );
+}
+
 function HelpModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="overlay" onClick={onClose}>
@@ -382,10 +494,18 @@ function HelpModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-function StatusBar({ state, lich }: { state: GameState; lich?: Enemy }) {
+function StatusBar({
+  state,
+  lich,
+  staminaFlash,
+}: {
+  state: GameState;
+  lich?: Enemy;
+  staminaFlash: "" | "up" | "down";
+}) {
   return (
     <div className="status">
-      <div className="stat stamina">
+      <div className={"stat stamina" + (staminaFlash ? " flash-" + staminaFlash : "")}>
         <div className="k">Stamina</div>
         <div className="v">{state.stamina}</div>
       </div>
