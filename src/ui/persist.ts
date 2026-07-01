@@ -22,9 +22,13 @@ export function loadGame(): GameState | null {
     const raw = localStorage.getItem(GAME_KEY);
     if (!raw) return null;
     const s = JSON.parse(raw) as GameState;
-    // Only resume games still in progress; sanity-check the shape.
-    if (s?.status?.kind === "playing" && Array.isArray(s.hand) && Array.isArray(s.row)) return s;
-    return null;
+    if (!(s?.status?.kind === "playing" && Array.isArray(s.hand) && Array.isArray(s.row))) return null;
+    // Backfill fields added in later versions so saves from older builds resume correctly
+    // (missing decks/rest/burn counters would otherwise break stamina + scoring math).
+    if (typeof s.decks !== "number") s.decks = 1;
+    if (typeof s.restsUsed !== "number") s.restsUsed = 0;
+    if (typeof s.burnsUsed !== "number") s.burnsUsed = 0;
+    return s;
   } catch {
     return null;
   }

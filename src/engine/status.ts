@@ -20,14 +20,17 @@ const BURN_PENALTY = 20; // deducted per Burn (skipping a fight by sacrificing t
  * produce a negative score.
  */
 export function scoreWin(state: GameState): Score {
+  const decks = state.decks || 1; // defensive: old saves may lack these fields
+  const rests = state.restsUsed || 0;
+  const burns = state.burnsUsed || 0;
   const unusedCards = state.hand.length; // deck is empty at a win; hand = tools never spent
   const staminaBonus = state.stamina * STAMINA_POINTS;
   const efficiencyBonus = unusedCards * EFFICIENCY_POINTS;
-  const par = SPEED_PAR_PER_DECK * state.decks;
+  const par = SPEED_PAR_PER_DECK * decks;
   const speedBonus = Math.max(0, par - state.turn) * SPEED_POINTS;
-  const restPenalty = state.restsUsed * REST_PENALTY;
-  const burnPenalty = state.burnsUsed * BURN_PENALTY;
-  const difficultyMult = state.decks;
+  const restPenalty = rests * REST_PENALTY;
+  const burnPenalty = burns * BURN_PENALTY;
+  const difficultyMult = decks;
 
   const subtotal = Math.max(
     0,
@@ -44,8 +47,8 @@ export function scoreWin(state: GameState): Score {
     difficultyMult,
     unusedCards,
     turns: state.turn,
-    rests: state.restsUsed,
-    burns: state.burnsUsed,
+    rests,
+    burns,
     total,
   };
 }

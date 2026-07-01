@@ -156,6 +156,7 @@ export function App() {
   const [burnArmed, setBurnArmed] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [diffOpen, setDiffOpen] = useState(false);
   const [comboSuit, setComboSuit] = useState<Suit | null>(null);
   const [stats, setStats] = useState<Stats>(loadStats);
   const [settings, setSettingsState] = useState<Settings>(loadSettings);
@@ -403,7 +404,21 @@ export function App() {
           onClose={() => setMenuOpen(false)}
           onNewGame={() => restart()}
           onPlaySeed={(seed) => restart(seed)}
-          onPlayDifficulty={(decks) => restart(undefined, decks)}
+          onOpenDifficulty={() => {
+            setMenuOpen(false);
+            setDiffOpen(true);
+          }}
+        />
+      )}
+      {diffOpen && (
+        <DifficultyModal
+          state={state}
+          stats={stats}
+          onClose={() => setDiffOpen(false)}
+          onPlayDifficulty={(decks) => {
+            setDiffOpen(false);
+            restart(undefined, decks);
+          }}
         />
       )}
     </div>
@@ -418,7 +433,7 @@ function MenuModal({
   onClose,
   onNewGame,
   onPlaySeed,
-  onPlayDifficulty,
+  onOpenDifficulty,
 }: {
   state: GameState;
   stats: Stats;
@@ -427,8 +442,9 @@ function MenuModal({
   onClose: () => void;
   onNewGame: () => void;
   onPlaySeed: (seed: number) => void;
-  onPlayDifficulty: (decks: number) => void;
+  onOpenDifficulty: () => void;
 }) {
+  const currentName = DIFFICULTY.find((d) => d.decks === state.decks)?.name ?? "Restless";
   const [seedInput, setSeedInput] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -481,36 +497,13 @@ function MenuModal({
         </div>
 
         <div className="menu-section">
-          <div className="menu-label">Difficulty — win a level to unlock the next</div>
-          <div className="difficulty">
-            {DIFFICULTY.map((d) => {
-              const locked = d.decks > stats.unlocked;
-              const current = d.decks === state.decks;
-              return (
-                <button
-                  key={d.decks}
-                  className={"level" + (current ? " current" : "") + (locked ? " locked" : "")}
-                  disabled={locked}
-                  onClick={() => onPlayDifficulty(d.decks)}
-                  title={`${d.decks} deck${d.decks > 1 ? "s" : ""}`}
-                >
-                  <span className="level-name">
-                    {locked ? "🔒 " : ""}
-                    {d.name}
-                  </span>
-                  <span className="level-decks">
-                    {d.decks} deck{d.decks > 1 ? "s" : ""}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          {stats.unlocked < MAX_DECKS && (
-            <div className="unlock-hint">
-              Win on {DIFFICULTY[stats.unlocked - 1].name} to unlock{" "}
-              {DIFFICULTY[stats.unlocked].name}.
-            </div>
-          )}
+          <div className="menu-label">Difficulty</div>
+          <button className="level current" onClick={onOpenDifficulty}>
+            <span className="level-name">{currentName}</span>
+            <span className="level-decks">
+              {state.decks} deck{state.decks > 1 ? "s" : ""} · change ▸
+            </span>
+          </button>
         </div>
 
         <div className="menu-section">
@@ -554,6 +547,59 @@ function MenuModal({
             Close
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function DifficultyModal({
+  state,
+  stats,
+  onClose,
+  onPlayDifficulty,
+}: {
+  state: GameState;
+  stats: Stats;
+  onClose: () => void;
+  onPlayDifficulty: (decks: number) => void;
+}) {
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+        <h2>Choose Your Watch</h2>
+        <p>Win a level to unlock the next. More decks — more of the dead.</p>
+        <div className="difficulty">
+          {DIFFICULTY.map((d) => {
+            const locked = d.decks > stats.unlocked;
+            const current = d.decks === state.decks;
+            const best = stats.bestByDeck?.[d.decks] ?? 0;
+            return (
+              <button
+                key={d.decks}
+                className={"level" + (current ? " current" : "") + (locked ? " locked" : "")}
+                disabled={locked}
+                onClick={() => onPlayDifficulty(d.decks)}
+              >
+                <span className="level-name">
+                  {locked ? "🔒 " : ""}
+                  {d.name}
+                </span>
+                <span className="level-decks">
+                  {d.decks} deck{d.decks > 1 ? "s" : ""}
+                  {best > 0 ? ` · best ${best.toLocaleString()}` : ""}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        {stats.unlocked < MAX_DECKS && (
+          <div className="unlock-hint">
+            Win on {DIFFICULTY[stats.unlocked - 1].name} to unlock {DIFFICULTY[stats.unlocked].name}.
+          </div>
+        )}
+        <button className="btn ghost" onClick={onClose} style={{ marginTop: 14 }}>
+          Back
+        </button>
       </div>
     </div>
   );
