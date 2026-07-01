@@ -28,6 +28,7 @@ import {
   clearGame,
   loadStats,
   recordResult,
+  resetStats,
   seedFromUrl,
   decksFromUrl,
   clearSeedFromUrl,
@@ -159,6 +160,16 @@ export function App() {
   const [diffOpen, setDiffOpen] = useState(false);
   const [comboSuit, setComboSuit] = useState<Suit | null>(null);
   const [stats, setStats] = useState<Stats>(loadStats);
+  const [err, setErr] = useState("");
+  const errTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  // Show a transient on-screen reason when a move isn't allowed, plus the "can't do" cue.
+  const fail = (msg: string) => {
+    denied();
+    setErr(msg);
+    clearTimeout(errTimer.current);
+    errTimer.current = setTimeout(() => setErr(""), 2600);
+  };
   const [settings, setSettingsState] = useState<Settings>(loadSettings);
 
   // Push settings into the fx runtime whenever they change (and on first mount).
@@ -191,6 +202,7 @@ export function App() {
     setSelected([]);
     setBurnArmed(false);
     setComboSuit(null);
+    setErr("");
   };
 
   // Apply a move, then persist: autosave while playing, record + clear the slot when it ends.
@@ -222,6 +234,7 @@ export function App() {
   const toggleCard = (id: string) => {
     playCue("select");
     buzz(8);
+    setErr("");
     setComboSuit(null); // any change of selection resets the chosen combo power
     setSelected((cur) =>
       cur.includes(id) ? cur.filter((x) => x !== id) : cur.length >= 2 ? [cur[1], id] : [...cur, id],
@@ -234,7 +247,9 @@ export function App() {
   const attackValue = selectedCards.reduce((n, c) => n + (isAce(c) ? 0 : (c.rank ?? 0)), 0);
   const aceSelected = selectedCards.find(isAce);
 
-  // Same-rank / different-suit combo: the player picks which suit power fires.
+  // Legal 2-card combos: same suit (any rank) OR same rank (different suit).
+  const sameSuitCombo =
+    selectedCards.length === 2 && selectedCards[0].suit === selectedCards[1].suit;
   const sameRankCombo =
     selectedCards.length === 2 &&
     selectedCards[0].rank === selectedCards[1].rank &&
@@ -248,21 +263,25 @@ export function App() {
 
   const onEnemy = (e: Enemy) => {
     if (state.status.kind !== "playing" || state.pending) return;
+
     if (burnArmed) {
-      if (selected.length === 2 && isLegal(state, { type: "burn", cardIds: selected, targetId: e.id })) {
-        dispatch({ type: "burn", cardIds: selected, targetId: e.id });
-      } else {
-        denied(); // need exactly 2 non-Ace cards, and not the Lich
-      }
-      return;
+      if (e.role === "lich") return fail("The Lich cannot be Burned.");
+      if (selectedCards.some(isAce)) return fail("Burn can't sacrifice an Ace.");
+      if (selected.length !== 2) return fail("Burn needs exactly 2 cards — pick two.");
+      return dispatch({ type: "burn", cardIds: selected, targetId: e.id });
     }
-    if (selected.length === 0) {
-      denied(); // nothing selected to strike with
-      return;
+
+    if (selected.length === 0) return fail("Pick a card first, then tap an enemy.");
+    if (selectedCards.some(isAce)) {
+      return fail("An Ace is a Ritual — use the Ritual button, not a Smite.");
+    }
+    if (selected.length === 2 && !sameSuitCombo && !sameRankCombo) {
+      // two cards that share neither suit nor rank can't be combined
+      return fail("Two cards can only combo if they share a suit or a rank.");
     }
     const action: Action = { type: "smite", cardIds: selected, targetId: e.id, chosenSuit: firingSuit };
     if (isLegal(state, action)) dispatch(action);
-    else denied();
+    else fail("That move isn't allowed.");
   };
 
   const lich = state.row.find((e) => e.role === "lich");
@@ -310,7 +329,9 @@ export function App() {
         ))}
       </div>
 
-      <div className="hint">{hint}</div>
+      <div className={"hint" + (err ? " hint-err" : "")} role={err ? "alert" : undefined}>
+        {err || hint}
+      </div>
 
       {sameRankCombo && (
         <div className="combo-choice">
@@ -408,6 +429,7 @@ export function App() {
             setMenuOpen(false);
             setDiffOpen(true);
           }}
+          onResetStats={() => setStats(resetStats())}
         />
       )}
       {diffOpen && (
@@ -434,6 +456,7 @@ function MenuModal({
   onNewGame,
   onPlaySeed,
   onOpenDifficulty,
+  onResetStats,
 }: {
   state: GameState;
   stats: Stats;
@@ -443,10 +466,12 @@ function MenuModal({
   onNewGame: () => void;
   onPlaySeed: (seed: number) => void;
   onOpenDifficulty: () => void;
+  onResetStats: () => void;
 }) {
   const currentName = DIFFICULTY.find((d) => d.decks === state.decks)?.name ?? "Restless";
   const [seedInput, setSeedInput] = useState("");
   const [copied, setCopied] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const copyLink = async () => {
     try {
@@ -501,7 +526,7 @@ function MenuModal({
           <button className="level current" onClick={onOpenDifficulty}>
             <span className="level-name">{currentName}</span>
             <span className="level-decks">
-              {state.decks} deck{state.decks > 1 ? "s" : ""} · change ▸
+              {state.decks} deck{state.decks > 1 ? "s" : ""} · change ▾
             </span>
           </button>
         </div>
@@ -537,6 +562,20 @@ function MenuModal({
           <div className="best-score">
             Best score <strong>{stats.bestScore.toLocaleString()}</strong>
           </div>
+          <button
+            className={"btn ghost reset-btn" + (confirmReset ? " danger" : "")}
+            onClick={() => {
+              if (confirmReset) {
+                onResetStats();
+                setConfirmReset(false);
+              } else {
+                setConfirmReset(true);
+              }
+            }}
+            onBlur={() => setConfirmReset(false)}
+          >
+            {confirmReset ? "Tap again to erase scores & streaks" : "Reset scores & streaks"}
+          </button>
         </div>
 
         <div className="install-actions">

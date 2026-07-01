@@ -107,6 +107,18 @@ export function recordResult(status: Status, decks: number): Stats {
   return st;
 }
 
+/** Wipe scores, streaks, tier counts, and play totals. Keeps unlocked difficulties. */
+export function resetStats(): Stats {
+  const cur = loadStats();
+  const fresh: Stats = { ...EMPTY, unlocked: cur.unlocked };
+  try {
+    localStorage.setItem(STATS_KEY, JSON.stringify(fresh));
+  } catch {
+    /* non-fatal */
+  }
+  return fresh;
+}
+
 // --- Seeds & sharing ---
 
 /** Turn user input (a number, or any word/phrase) into a deterministic numeric seed. */

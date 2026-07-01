@@ -216,6 +216,8 @@ body {
 }
 .level {
   display: flex;
+  width: 100%;
+  gap: 10px;
   justify-content: space-between;
   align-items: center;
   font-family: inherit;
@@ -394,6 +396,23 @@ body {
   min-height: 18px;
   font-style: italic;
 }
+.hint-err {
+  color: #e6a08c;
+  font-style: normal;
+  animation: errShake 0.3s ease;
+}
+@keyframes errShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
 
 .combo-choice {
   display: flex;
@@ -429,7 +448,7 @@ body {
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 8px 12px;
-  height: clamp(112px, 17vh, 166px);
+  height: clamp(70px, 10vh, 96px);
   overflow-y: auto;
   font-size: 13px;
   color: var(--muted);
@@ -483,7 +502,7 @@ body {
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 8px 12px;
-  height: clamp(112px, 17vh, 166px);
+  height: clamp(70px, 10vh, 96px);
   overflow-y: auto;
   font-size: 13px;
 }
@@ -600,6 +619,15 @@ body {
 .best-score strong {
   color: var(--gold-bright);
   font-size: 16px;
+}
+.reset-btn {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+}
+.reset-btn.danger {
+  border-color: var(--red);
+  color: #e6a08c;
 }
 .spacer {
   flex: 1;
