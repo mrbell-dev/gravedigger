@@ -51,6 +51,8 @@ export interface Stats {
   streak: number;
   bestStreak: number;
   unlocked: number; // highest difficulty (deck count) unlocked; starts at 1
+  bestScore: number; // best single-game score across all difficulties
+  bestByDeck: Record<number, number>; // best score per difficulty (deck count)
 }
 
 const EMPTY: Stats = {
@@ -62,6 +64,8 @@ const EMPTY: Stats = {
   streak: 0,
   bestStreak: 0,
   unlocked: 1,
+  bestScore: 0,
+  bestByDeck: {},
 };
 
 export function loadStats(): Stats {
@@ -84,6 +88,10 @@ export function recordResult(status: Status, decks: number): Stats {
     st.bestStreak = Math.max(st.bestStreak, st.streak);
     // Winning at difficulty D unlocks D+1 (up to the maximum).
     st.unlocked = Math.max(st.unlocked, Math.min(MAX_DECKS, decks + 1));
+    // Track best scores overall and per difficulty.
+    const pts = status.score.total;
+    st.bestScore = Math.max(st.bestScore, pts);
+    st.bestByDeck = { ...st.bestByDeck, [decks]: Math.max(st.bestByDeck[decks] ?? 0, pts) };
   } else {
     st.streak = 0;
   }

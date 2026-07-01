@@ -1,9 +1,26 @@
 // Win / loss detection and victory tiers.
 
-import type { GameState } from "./types";
+import type { GameState, Score } from "./types";
 import { isAce } from "./cards";
 import { toolValue } from "./cards";
 import { maxStamina } from "./balance";
+
+const STAMINA_POINTS = 10; // per remaining stamina
+const EFFICIENCY_POINTS = 25; // per tool left unused in hand
+const CLEAR_BONUS = 100; // flat reward for winning
+
+/**
+ * Score a won game. Rewards finishing with high stamina and with tools still in hand (you cleared
+ * the graveyard without needing to spend everything). Scaled by difficulty (deck count).
+ */
+export function scoreWin(state: GameState): Score {
+  const unusedCards = state.hand.length; // deck is empty at a win; hand = tools never spent
+  const staminaBonus = state.stamina * STAMINA_POINTS;
+  const efficiencyBonus = unusedCards * EFFICIENCY_POINTS;
+  const difficultyMult = state.decks;
+  const total = Math.round((staminaBonus + efficiencyBonus + CLEAR_BONUS) * difficultyMult);
+  return { staminaBonus, efficiencyBonus, clearBonus: CLEAR_BONUS, difficultyMult, unusedCards, total };
+}
 
 export function victoryTier(stamina: number, decks = 1): "gold" | "silver" | "bronze" {
   const cap = maxStamina(decks);
@@ -26,6 +43,7 @@ export function checkWinLoss(state: GameState): void {
       kind: "won",
       tier: victoryTier(state.stamina, state.decks),
       stamina: state.stamina,
+      score: scoreWin(state),
     };
   }
 }

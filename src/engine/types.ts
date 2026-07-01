@@ -39,9 +39,19 @@ export type Pending =
   | { kind: "salt-remove"; resumePhase: Phase } // Salt: choose which enemy loses a festering token
   | { kind: "discard"; downTo: number; resumePhase: Phase }; // trim an overfull hand by choice
 
+/** Point breakdown for a won game — rewards efficiency (stamina kept + tools unused). */
+export interface Score {
+  staminaBonus: number; // stamina you finished with
+  efficiencyBonus: number; // tools left unused in hand
+  clearBonus: number; // flat reward for clearing the graveyard
+  difficultyMult: number; // ×1 per deck
+  unusedCards: number; // raw count of cards left in hand
+  total: number;
+}
+
 export type Status =
   | { kind: "playing" }
-  | { kind: "won"; tier: "gold" | "silver" | "bronze"; stamina: number }
+  | { kind: "won"; tier: "gold" | "silver" | "bronze"; stamina: number; score: Score }
   | { kind: "lost"; reason: "stamina" | "no-legal-action" };
 
 /** The entire game state. Everything needed to render or resume is here. */

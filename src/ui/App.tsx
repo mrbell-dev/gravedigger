@@ -37,6 +37,10 @@ import {
   type Stats,
 } from "./persist";
 
+// Display labels matching the engine's scoreWin() weights (kept in sync manually).
+const STAMINA_MULT = 10;
+const EFFICIENCY_MULT = 25;
+
 const DIFFICULTY: { name: string; decks: number }[] = [
   { name: "Restless", decks: 1 },
   { name: "Cursed", decks: 2 },
@@ -388,7 +392,7 @@ export function App() {
           onConfirm={(ids) => dispatch({ type: "discard", cardIds: ids })}
         />
       )}
-      {!playing && <GameOver state={state} onRestart={() => restart()} />}
+      {!playing && <GameOver state={state} stats={stats} onRestart={() => restart()} />}
       {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}
       {menuOpen && (
         <MenuModal
@@ -536,6 +540,9 @@ function MenuModal({
             <Stat k="Gold" v={stats.gold} />
             <Stat k="Silver" v={stats.silver} />
             <Stat k="Bronze" v={stats.bronze} />
+          </div>
+          <div className="best-score">
+            Best score <strong>{stats.bestScore.toLocaleString()}</strong>
           </div>
         </div>
 
@@ -746,6 +753,7 @@ function EnemyCard({
   return (
     <div
       className={cls}
+      data-eid={enemy.id}
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -809,6 +817,7 @@ function HandCard({
   return (
     <div
       className={cls}
+      data-cid={card.id}
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -941,9 +950,19 @@ function DiscardModal({
   );
 }
 
-function GameOver({ state, onRestart }: { state: GameState; onRestart: () => void }) {
+function GameOver({
+  state,
+  stats,
+  onRestart,
+}: {
+  state: GameState;
+  stats: Stats;
+  onRestart: () => void;
+}) {
   const s = state.status;
   const won = s.kind === "won";
+  // stats already reflect this game (recorded on commit); a tie with bestScore means it was the best.
+  const isBest = s.kind === "won" && s.score.total > 0 && s.score.total >= stats.bestScore;
   return (
     <div className="overlay">
       <div className="modal" role="dialog" aria-modal="true">
@@ -954,7 +973,30 @@ function GameOver({ state, onRestart }: { state: GameState; onRestart: () => voi
             <p className="tier">
               {s.tier.toUpperCase()} — {tierName(s.tier)}
             </p>
-            <p>Stamina remaining: {s.stamina}</p>
+            <div className="score-box">
+              <div className="score-total">
+                {s.score.total.toLocaleString()} <span className="score-unit">pts</span>
+              </div>
+              {isBest && <div className="score-best">✦ New best! ✦</div>}
+              <div className="score-lines">
+                <div>
+                  <span>Stamina × {STAMINA_MULT}</span>
+                  <span>{s.score.staminaBonus}</span>
+                </div>
+                <div>
+                  <span>{s.score.unusedCards} tools unused × {EFFICIENCY_MULT}</span>
+                  <span>{s.score.efficiencyBonus}</span>
+                </div>
+                <div>
+                  <span>Graveyard cleared</span>
+                  <span>{s.score.clearBonus}</span>
+                </div>
+                <div className="score-mult">
+                  <span>Difficulty</span>
+                  <span>× {s.score.difficultyMult}</span>
+                </div>
+              </div>
+            </div>
           </>
         ) : (
           <p>

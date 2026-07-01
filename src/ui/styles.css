@@ -539,6 +539,65 @@ body {
   font-size: 20px;
   letter-spacing: 2px;
 }
+
+/* --- Score box (win screen) --- */
+.score-box {
+  margin: 14px 0 4px;
+  padding: 12px 14px;
+  background: #120d09;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.score-total {
+  font-family: "Pirata One", serif;
+  font-size: 40px;
+  color: var(--gold-bright);
+  text-align: center;
+  line-height: 1;
+}
+.score-unit {
+  font-family: "EB Garamond", serif;
+  font-size: 16px;
+  color: var(--muted);
+}
+.score-best {
+  text-align: center;
+  color: #7fae6a;
+  font-size: 14px;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+.score-lines {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.score-lines > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  border-bottom: 1px dotted #24190f;
+}
+.score-lines > div span:last-child {
+  color: var(--ink);
+}
+.score-lines .score-mult {
+  border-bottom: none;
+  color: var(--gold);
+}
+.score-lines .score-mult span:last-child {
+  color: var(--gold-bright);
+}
+.best-score {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 10px;
+}
+.best-score strong {
+  color: var(--gold-bright);
+  font-size: 16px;
+}
 .spacer {
   flex: 1;
 }

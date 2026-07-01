@@ -166,6 +166,42 @@ describe("♣ Salt — Suppress", () => {
   });
 });
 
+describe("scoring a win", () => {
+  it("rewards leftover stamina and unused hand cards, scaled by difficulty", () => {
+    // One enemy, empty deck: killing it wins immediately. Hand keeps its other cards.
+    const s = base({
+      stamina: 7,
+      hand: [C("C", 9), C("S", 2), C("S", 3)], // kill with the 9♣, leaving 2 tools unused
+      row: [en("H", 6)],
+      deck: [],
+    });
+    const after = apply(s, { type: "smite", cardIds: ["C9"], targetId: "H6", chosenSuit: "C" });
+    expect(after.status.kind).toBe("won");
+    if (after.status.kind === "won") {
+      const sc = after.status.score;
+      expect(sc.unusedCards).toBe(2); // S2 + S3 remain
+      // (7*10 stamina + 2*25 efficiency + 100 clear) * 1 deck = 220
+      expect(sc.total).toBe(220);
+    }
+  });
+
+  it("multiplies by deck count", () => {
+    const s = base({
+      decks: 3,
+      stamina: 5,
+      hand: [C("C", 9)],
+      row: [en("H", 6)],
+      deck: [],
+    });
+    const after = apply(s, { type: "smite", cardIds: ["C9"], targetId: "H6", chosenSuit: "C" });
+    if (after.status.kind === "won") {
+      // (5*10 + 0*25 + 100) * 3 = 450
+      expect(after.status.score.total).toBe(450);
+      expect(after.status.score.difficultyMult).toBe(3);
+    }
+  });
+});
+
 describe("Burn", () => {
   it("discards exactly the 2 chosen cards and removes the enemy (no power fires)", () => {
     const s = base({
