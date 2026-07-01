@@ -703,6 +703,21 @@ body {
 }
 .toggle-label {
   font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+.toggle-note {
+  font-size: 10px;
+  color: var(--muted);
+  font-style: italic;
+}
+.toggle.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.toggle.disabled .toggle-track {
+  background: #1a130d;
 }
 .toggle-track {
   width: 40px;

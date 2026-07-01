@@ -53,6 +53,7 @@ import {
   playCue,
   buzz,
   denied,
+  hapticsSupported,
   type Settings,
 } from "./fx";
 
@@ -518,7 +519,9 @@ function MenuModal({
             />
             <Toggle
               label="Haptics"
-              on={settings.haptics}
+              on={hapticsSupported && settings.haptics}
+              disabled={!hapticsSupported}
+              note={hapticsSupported ? undefined : "unsupported on iOS"}
               onClick={() => onChangeSettings({ haptics: !settings.haptics })}
             />
           </div>
@@ -558,10 +561,32 @@ function Stat({ k, v }: { k: string; v: string | number }) {
   );
 }
 
-function Toggle({ label, on, onClick }: { label: string; on: boolean; onClick: () => void }) {
+function Toggle({
+  label,
+  on,
+  onClick,
+  disabled = false,
+  note,
+}: {
+  label: string;
+  on: boolean;
+  onClick: () => void;
+  disabled?: boolean;
+  note?: string;
+}) {
   return (
-    <button className={"toggle" + (on ? " on" : "")} onClick={onClick} role="switch" aria-checked={on}>
-      <span className="toggle-label">{label}</span>
+    <button
+      className={"toggle" + (on ? " on" : "") + (disabled ? " disabled" : "")}
+      onClick={onClick}
+      disabled={disabled}
+      role="switch"
+      aria-checked={on}
+      title={note}
+    >
+      <span className="toggle-label">
+        {label}
+        {note ? <span className="toggle-note">{note}</span> : null}
+      </span>
       <span className="toggle-track">
         <span className="toggle-knob" />
       </span>

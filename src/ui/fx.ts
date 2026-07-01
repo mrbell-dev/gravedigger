@@ -6,8 +6,17 @@ export interface Settings {
   haptics: boolean;
 }
 
+/**
+ * Whether the device supports the Vibration API. Absent on iOS Safari (Apple doesn't implement it),
+ * present on Android. Used to default haptics on/off and to disable the toggle where unsupported.
+ */
+export const hapticsSupported =
+  typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
+
 const KEY = "gd-settings-v1";
-const DEFAULTS: Settings = { sound: false, haptics: true };
+// One feedback channel on by default per platform: haptics where supported (Android),
+// otherwise sound (iOS, which has no Vibration API).
+const DEFAULTS: Settings = { sound: !hapticsSupported, haptics: hapticsSupported };
 
 export function loadSettings(): Settings {
   try {
