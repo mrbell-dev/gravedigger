@@ -304,8 +304,6 @@ export function App() {
         ))}
       </div>
 
-      <div className="spacer" />
-
       <div className="hint">{hint}</div>
 
       {sameRankCombo && (
@@ -607,7 +605,7 @@ function ChroniclePanel({ log }: { log: GameState["log"] }) {
       <div className="panel-swipe" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         {page === 0 ? (
           <div className="log" role="log" aria-live="polite" aria-labelledby="chronicle-label">
-            {log.slice(-7).map((ev, i) => (
+            {log.slice(-10).map((ev, i) => (
               <div className="line" key={i}>
                 {ev.text}
               </div>

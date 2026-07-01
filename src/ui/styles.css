@@ -132,11 +132,14 @@ body {
 /* --- The row of enemies --- */
 .row {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   justify-content: center;
   flex-wrap: wrap;
-  min-height: 150px;
+  align-content: center;
   align-items: center;
+  /* The graveyard is the board — let it grow to absorb spare vertical space on tall phones. */
+  flex: 1 1 auto;
+  min-height: clamp(120px, 16vh, 170px);
 }
 .enemy {
   width: 84px;
@@ -426,7 +429,8 @@ body {
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 8px 12px;
-  max-height: 128px;
+  max-height: clamp(130px, 26vh, 240px);
+  min-height: clamp(84px, 14vh, 140px);
   overflow-y: auto;
   font-size: 13px;
   color: var(--muted);
@@ -480,7 +484,8 @@ body {
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 8px 12px;
-  max-height: 128px;
+  max-height: clamp(130px, 26vh, 240px);
+  min-height: clamp(84px, 14vh, 140px);
   overflow-y: auto;
   font-size: 13px;
 }
