@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="34%" r="80%">
+      <stop offset="0%" stop-color="#2a1f16"/>
+      <stop offset="55%" stop-color="#160f0a"/>
+      <stop offset="100%" stop-color="#0b0705"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e4c877"/>
+      <stop offset="100%" stop-color="#b8892f"/>
+    </linearGradient>
+  </defs>
+
+  <!-- rounded background (maskable-safe: content kept within the central ~76%) -->
+  <rect width="512" height="512" rx="110" fill="url(#bg)"/>
+
+  <!-- moon behind the stone -->
+  <circle cx="256" cy="150" r="62" fill="#3a2c1c" opacity="0.9"/>
+  <circle cx="232" cy="138" r="54" fill="url(#bg)"/>
+
+  <!-- tombstone -->
+  <path d="M168 236 a88 88 0 0 1 176 0 V392 a14 14 0 0 1 -14 14 H182 a14 14 0 0 1 -14 -14 Z"
+        fill="url(#gold)"/>
+  <!-- inner face -->
+  <path d="M186 244 a70 70 0 0 1 140 0 V386 H186 Z" fill="#1a120b"/>
+
+  <!-- cross -->
+  <rect x="247" y="272" width="18" height="86" rx="4" fill="url(#gold)"/>
+  <rect x="226" y="296" width="60" height="18" rx="4" fill="url(#gold)"/>
+
+  <!-- mound / ground -->
+  <path d="M120 408 q136 -46 272 0 q10 22 -18 26 H138 q-28 -4 -18 -26 Z" fill="url(#gold)" opacity="0.85"/>
+</svg>
