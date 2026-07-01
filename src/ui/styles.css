@@ -33,22 +33,31 @@ html,
 body,
 #root {
   margin: 0;
-  height: 100%;
+  min-height: 100%;
+}
+
+/* Paint the darkest tone on the root element so iOS fills the home-indicator safe area and any
+   overscroll with it (not the webview's default white) — kills the white bar in an installed PWA. */
+html {
+  background-color: #0d0906;
 }
 
 body {
-  background:
-    radial-gradient(120% 80% at 50% -10%, #241a12 0%, var(--bg) 55%, #0d0906 100%);
+  min-height: 100dvh;
+  background-color: #0d0906;
+  background-image: radial-gradient(120% 80% at 50% -10%, #241a12 0%, var(--bg) 55%, #0d0906 100%);
+  background-attachment: fixed;
   color: var(--ink);
   font-family: "EB Garamond", Georgia, serif;
   -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
 }
 
 .app {
   position: relative;
   max-width: 720px;
   margin: 0 auto;
-  min-height: 100%;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   padding: calc(12px + var(--safe-t)) 12px calc(12px + var(--safe-b));

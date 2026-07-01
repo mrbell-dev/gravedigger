@@ -75,20 +75,20 @@ try {
   await mp.waitForTimeout(250);
   await mp.screenshot({ path: "shots/mobile-selected.png", fullPage: true });
 
-  // Take a few greedy actions to reach a more "played" board state.
-  for (let i = 0; i < 6; i++) {
-    const enemy = mp.locator(".enemy").first();
-    const card = mp.locator(".hand .card").first();
-    if ((await card.count()) === 0 || (await enemy.count()) === 0) break;
-    await card.click();
-    await enemy.click();
-    await mp.waitForTimeout(200);
-    // dismiss an Omen overlay if present
-    const keep = mp.getByText("Keep this order");
-    if (await keep.count()) {
-      await keep.click();
+  // Take a few greedy actions to reach a more "played" board state. Best-effort: if a modal or
+  // game-over overlay intercepts a click, just stop and screenshot whatever we have.
+  try {
+    for (let i = 0; i < 6; i++) {
+      if (await mp.locator(".overlay").count()) break; // a modal is open — don't fight it
+      const enemy = mp.locator(".enemy").first();
+      const card = mp.locator(".hand .card").first();
+      if ((await card.count()) === 0 || (await enemy.count()) === 0) break;
+      await card.click({ timeout: 2000 });
+      await enemy.click({ timeout: 2000 });
       await mp.waitForTimeout(200);
     }
+  } catch {
+    /* best-effort playthrough for the screenshot; ignore */
   }
   await mp.screenshot({ path: "shots/mobile-played.png", fullPage: true });
 
