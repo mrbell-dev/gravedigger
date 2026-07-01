@@ -165,6 +165,23 @@ describe("♣ Salt — Suppress", () => {
   });
 });
 
+describe("Burn", () => {
+  it("discards exactly the 2 chosen cards and removes the enemy (no power fires)", () => {
+    const s = base({
+      hand: [C("S", 2), C("S", 3), C("H", 9)],
+      row: [en("C", 6), en("D", 10)], // second enemy so the game doesn't end mid-check
+      deck: [C("D", 4), C("D", 5)],
+    });
+    const after = apply(s, { type: "burn", cardIds: ["S2", "S3"], targetId: "C6" });
+    expect(after.row.find((e) => e.id === "C6")).toBeUndefined(); // enemy removed
+    expect(after.discard.some((c) => c.id === "S2")).toBe(true); // both burned cards discarded
+    expect(after.discard.some((c) => c.id === "S3")).toBe(true);
+    expect(after.hand.some((c) => c.id === "S2")).toBe(false); // and gone from hand
+    expect(after.hand.some((c) => c.id === "S3")).toBe(false);
+    expect(after.hand.some((c) => c.id === "H9")).toBe(true); // the unselected card stays
+  });
+});
+
 describe("hand-limit discard (mid-turn overfill)", () => {
   it("Silver drawing past 5 pauses for a player discard choice", () => {
     // Full hand; Silver kill draws +2 => hand of 6 => must shed 1. A second enemy + leftover

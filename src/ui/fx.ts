@@ -81,6 +81,7 @@ export type Cue =
   | "ritual"
   | "burn"
   | "omen"
+  | "cantdo"
   | "win"
   | "lose";
 
@@ -110,6 +111,10 @@ export function playCue(cue: Cue): void {
     case "omen":
       tone(520, 0.14, { type: "sine", gain: 0.07, glideTo: 720 });
       break;
+    case "cantdo": // dull, dissonant "no" — two clashing low tones
+      tone(150, 0.13, { type: "square", gain: 0.07 });
+      tone(159, 0.13, { type: "square", gain: 0.07 });
+      break;
     case "win":
       [523, 659, 784, 1047].forEach((f, i) =>
         tone(f, 0.28, { type: "triangle", gain: 0.11, delay: i * 0.12 }),
@@ -121,6 +126,12 @@ export function playCue(cue: Cue): void {
       );
       break;
   }
+}
+
+/** "You can't do that" feedback: dissonant cue + a short double-buzz. */
+export function denied(): void {
+  playCue("cantdo");
+  buzz([18, 40, 18]);
 }
 
 /** Vibrate (mobile). No-op if disabled or unsupported. */

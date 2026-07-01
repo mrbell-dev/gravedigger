@@ -53,6 +53,28 @@ try {
   await settle(mp);
   await mp.screenshot({ path: "shots/mobile-fresh.png", fullPage: true });
 
+  // Quick Reference (swipe panel — reached via the second dot), then back to Chronicle.
+  const dots = mp.locator(".dot");
+  if ((await dots.count()) > 1) {
+    await dots.nth(1).click();
+    await mp.waitForTimeout(250);
+    await mp.screenshot({ path: "shots/mobile-quickref.png", fullPage: true });
+    await dots.nth(0).click();
+  }
+
+  // Burn armed, with two cards marked for sacrifice.
+  try {
+    await mp.locator("button.btn", { hasText: "Burn" }).click();
+    await mp.locator(".hand .card").nth(0).click();
+    await mp.locator(".hand .card").nth(1).click();
+    await mp.waitForTimeout(250);
+    await mp.screenshot({ path: "shots/mobile-burn.png", fullPage: true });
+  } catch {
+    /* best effort */
+  }
+  await mp.reload({ waitUntil: "load" });
+  await settle(mp);
+
   // Add-to-Home-Screen prompt
   const banner = mp.locator(".install-banner");
   if (await banner.count()) {

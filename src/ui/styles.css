@@ -222,6 +222,34 @@ body {
 .card.red {
   color: var(--blood);
 }
+.card.burning {
+  transform: translateY(-10px);
+  box-shadow:
+    0 0 0 2px var(--red),
+    0 8px 16px var(--shadow);
+}
+/* Jokers are unmistakably NOT a Jack: violet stock, a skull, an "OMEN" tag. */
+.card.joker {
+  background: linear-gradient(160deg, #2b2444, #171125);
+  border-color: #6a5a9a;
+  color: #cbbfe6;
+  justify-content: space-between;
+}
+.card.joker .r {
+  color: #9b8bc9;
+  font-size: 16px;
+}
+.card.joker .joker-face {
+  text-align: center;
+  font-size: 26px;
+  color: #c3b3ef;
+}
+.card.joker .joker-tag {
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #9b8bc9;
+}
 .card.ace {
   background: linear-gradient(160deg, #f0e6cc, #cdb98c);
   border-color: var(--gold);
@@ -325,6 +353,69 @@ body {
   border-bottom: 1px dotted #24190f;
 }
 .log .line:last-child {
+  color: var(--ink);
+}
+
+/* --- Swipeable Chronicle / Quick Reference --- */
+.chronicle-hdr {
+  position: relative;
+}
+.swipe-hint {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: none;
+  font-style: italic;
+  color: var(--muted);
+}
+.panel-swipe {
+  touch-action: pan-y;
+}
+.dots {
+  display: flex;
+  gap: 7px;
+  justify-content: center;
+  margin-top: 6px;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+.dot.on {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.quickref {
+  background: #120d09;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 12px;
+  max-height: 128px;
+  overflow-y: auto;
+  font-size: 13px;
+}
+.qr-row {
+  display: flex;
+  gap: 10px;
+  padding: 3px 0;
+  border-bottom: 1px dotted #24190f;
+}
+.qr-row:last-child {
+  border-bottom: none;
+}
+.qr-k {
+  color: var(--gold-bright);
+  min-width: 78px;
+  flex-shrink: 0;
+}
+.qr-v {
   color: var(--ink);
 }
 

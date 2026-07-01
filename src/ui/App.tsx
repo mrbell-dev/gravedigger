@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent as RKeyEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as RKeyEvent,
+  type TouchEvent as RTouchEvent,
+} from "react";
 import { marked } from "marked";
 import "./styles.css";
 import rulesMarkdown from "../engine/RULES.md?raw";
@@ -35,6 +42,7 @@ import {
   setHaptics,
   playCue,
   buzz,
+  denied,
   type Settings,
 } from "./fx";
 
@@ -224,11 +232,20 @@ export function App() {
   const onEnemy = (e: Enemy) => {
     if (state.status.kind !== "playing" || state.pending) return;
     if (burnArmed) {
-      if (selected.length === 2) dispatch({ type: "burn", cardIds: selected, targetId: e.id });
+      if (selected.length === 2 && isLegal(state, { type: "burn", cardIds: selected, targetId: e.id })) {
+        dispatch({ type: "burn", cardIds: selected, targetId: e.id });
+      } else {
+        denied(); // need exactly 2 non-Ace cards, and not the Lich
+      }
       return;
     }
-    if (selected.length === 0) return;
-    dispatch({ type: "smite", cardIds: selected, targetId: e.id, chosenSuit: firingSuit });
+    if (selected.length === 0) {
+      denied(); // nothing selected to strike with
+      return;
+    }
+    const action: Action = { type: "smite", cardIds: selected, targetId: e.id, chosenSuit: firingSuit };
+    if (isLegal(state, action)) dispatch(action);
+    else denied();
   };
 
   const lich = state.row.find((e) => e.role === "lich");
@@ -302,6 +319,7 @@ export function App() {
             key={c.id}
             card={c}
             selected={selected.includes(c.id)}
+            burn={burnArmed}
             onClick={() => toggleCard(c.id)}
           />
         ))}
@@ -339,16 +357,7 @@ export function App() {
         </button>
       </div>
 
-      <div className="hdr" id="chronicle-label">
-        Chronicle
-      </div>
-      <div className="log" role="log" aria-live="polite" aria-labelledby="chronicle-label">
-        {state.log.slice(-7).map((ev, i) => (
-          <div className="line" key={i}>
-            {ev.text}
-          </div>
-        ))}
-      </div>
+      <ChroniclePanel log={state.log} />
 
       {state.pending?.kind === "reorder" && (
         <ReorderModal
@@ -528,6 +537,82 @@ function HelpModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+function ChroniclePanel({ log }: { log: GameState["log"] }) {
+  const [page, setPage] = useState(0); // 0 = Chronicle, 1 = Quick Reference
+  const startX = useRef<number | null>(null);
+
+  const onTouchStart = (e: RTouchEvent) => {
+    startX.current = e.touches[0].clientX;
+  };
+  const onTouchEnd = (e: RTouchEvent) => {
+    if (startX.current === null) return;
+    const dx = e.changedTouches[0].clientX - startX.current;
+    startX.current = null;
+    if (Math.abs(dx) > 40) setPage(dx < 0 ? 1 : 0);
+  };
+
+  return (
+    <>
+      <div className="hdr chronicle-hdr" id="chronicle-label">
+        {page === 0 ? "Chronicle" : "Quick Reference"}
+        <span className="swipe-hint">swipe ⟷</span>
+      </div>
+      <div className="panel-swipe" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        {page === 0 ? (
+          <div className="log" role="log" aria-live="polite" aria-labelledby="chronicle-label">
+            {log.slice(-7).map((ev, i) => (
+              <div className="line" key={i}>
+                {ev.text}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <QuickRef />
+        )}
+      </div>
+      <div className="dots">
+        <button
+          className={"dot" + (page === 0 ? " on" : "")}
+          onClick={() => setPage(0)}
+          aria-label="Show Chronicle"
+        />
+        <button
+          className={"dot" + (page === 1 ? " on" : "")}
+          onClick={() => setPage(1)}
+          aria-label="Show Quick Reference"
+        />
+      </div>
+    </>
+  );
+}
+
+function QuickRef() {
+  const rows: [string, string][] = [
+    ["Turn", "Flip → Act → Suffer → Refill"],
+    ["Act", "Smite · Ritual · Rest · Burn"],
+    ["Smite", "meet/beat value = kill; else it festers"],
+    ["♠ Iron", "on kill, flip the next card now"],
+    ["♣ Salt", "clear one festering token"],
+    ["♥ Fire", "2 splash to every other enemy"],
+    ["♦ Silver", "on kill, draw 2 cards"],
+    ["Combo", "2 cards — same suit, or same rank"],
+    ["Ace", "Ritual: clear all festering"],
+    ["Joker", "Omen: peek & reorder the deck"],
+    ["Burn", "discard 2 cards to remove an enemy"],
+    ["Win / Lose", "clear deck & row / Stamina hits 0"],
+  ];
+  return (
+    <div className="quickref">
+      {rows.map(([k, v]) => (
+        <div className="qr-row" key={k}>
+          <span className="qr-k">{k}</span>
+          <span className="qr-v">{v}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function StatusBar({
   state,
   lich,
@@ -617,30 +702,47 @@ function enemyLabel(base: number): string {
 function HandCard({
   card,
   selected,
+  burn = false,
   onClick,
 }: {
   card: Card;
   selected: boolean;
+  burn?: boolean;
   onClick: () => void;
 }) {
+  const joker = isJoker(card);
   const red = card.suit && RED_SUITS.has(card.suit);
-  const sym = card.suit ? SUIT_SYMBOL[card.suit] : "★";
+  const sym = card.suit ? SUIT_SYMBOL[card.suit] : "";
+  const cls =
+    "card" +
+    (red ? " red" : "") +
+    (isAce(card) ? " ace" : "") +
+    (joker ? " joker" : "") +
+    (selected ? (burn ? " burning" : " selected") : "");
   return (
     <div
-      className={
-        "card" + (red ? " red" : "") + (isAce(card) ? " ace" : "") + (selected ? " selected" : "")
-      }
+      className={cls}
       onClick={onClick}
       role="button"
       tabIndex={0}
       onKeyDown={onActivate(onClick)}
       aria-label={cardAria(card)}
       aria-pressed={selected}
-      title={card.suit ? `${SUIT_NAME[card.suit]} (${card.suit})` : "Joker"}
+      title={card.suit ? `${SUIT_NAME[card.suit]} (${card.suit})` : "Joker — an Omen"}
     >
-      <div className="r">{rankStr(card)}</div>
-      <div className="mid">{sym}</div>
-      <div className="s">{sym}</div>
+      {joker ? (
+        <>
+          <div className="r">✶</div>
+          <div className="mid joker-face">☠</div>
+          <div className="joker-tag">OMEN</div>
+        </>
+      ) : (
+        <>
+          <div className="r">{rankStr(card)}</div>
+          <div className="mid">{sym}</div>
+          <div className="s">{sym}</div>
+        </>
+      )}
     </div>
   );
 }
@@ -727,9 +829,11 @@ function DiscardModal({
   const need = state.hand.length - downTo;
   const [picked, setPicked] = useState<string[]>([]);
   const toggle = (id: string) =>
-    setPicked((cur) =>
-      cur.includes(id) ? cur.filter((x) => x !== id) : cur.length >= need ? cur : [...cur, id],
-    );
+    setPicked((cur) => {
+      if (cur.includes(id)) return cur.filter((x) => x !== id); // tap again to deselect
+      if (cur.length < need) return [...cur, id];
+      return [...cur.slice(1), id]; // at the limit: drop the oldest pick, select this one
+    });
   return (
     <div className="overlay">
       <div className="modal" role="dialog" aria-modal="true">
