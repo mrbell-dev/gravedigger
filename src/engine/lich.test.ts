@@ -23,6 +23,7 @@ const lich = (hp = 20, lichTurns = 0): Enemy => {
 
 const base = (o: Partial<GameState>): GameState => ({
   seed: 0,
+  decks: 1,
   lichId: "KH",
   turn: 1,
   phase: "act",

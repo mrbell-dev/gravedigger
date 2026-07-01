@@ -14,16 +14,22 @@ export const SUIT_NAME: Record<Suit, string> = {
 
 export const SUIT_SYMBOL: Record<Suit, string> = { S: "♠", C: "♣", H: "♥", D: "♦" };
 
-/** Build the full 54-card deck (52 standard + 2 jokers), in a fixed canonical order. */
-export function fullDeck(): Card[] {
+/**
+ * Build `copies` full 54-card decks (52 standard + 2 jokers each), in a fixed canonical order.
+ * Every card gets a globally-unique id (`#<copy>` suffix) so multiple decks never collide — the
+ * engine keys everything (enemy ids, React keys, card-conservation sets) on id.
+ */
+export function fullDeck(copies = 1): Card[] {
   const cards: Card[] = [];
-  for (const suit of SUITS) {
-    for (const rank of RANKS) {
-      cards.push({ id: `${suit}${rank}`, kind: "standard", suit, rank });
+  for (let c = 0; c < copies; c++) {
+    for (const suit of SUITS) {
+      for (const rank of RANKS) {
+        cards.push({ id: `${suit}${rank}#${c}`, kind: "standard", suit, rank });
+      }
     }
+    cards.push({ id: `JOKER-A#${c}`, kind: "joker" });
+    cards.push({ id: `JOKER-B#${c}`, kind: "joker" });
   }
-  cards.push({ id: "JOKER-A", kind: "joker" });
-  cards.push({ id: "JOKER-B", kind: "joker" });
   return cards;
 }
 

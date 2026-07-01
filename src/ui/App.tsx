@@ -29,11 +29,21 @@ import {
   loadStats,
   recordResult,
   seedFromUrl,
+  decksFromUrl,
   clearSeedFromUrl,
   shareLink,
   parseSeedInput,
+  MAX_DECKS,
   type Stats,
 } from "./persist";
+
+const DIFFICULTY: { name: string; decks: number }[] = [
+  { name: "Restless", decks: 1 },
+  { name: "Cursed", decks: 2 },
+  { name: "Haunted", decks: 3 },
+  { name: "Damned", decks: 4 },
+  { name: "Impossible", decks: 5 },
+];
 
 import {
   loadSettings,
@@ -86,10 +96,11 @@ function fireFeedback(prev: GameState, next: GameState, action: Action): void {
 function initialState(): GameState {
   const urlSeed = seedFromUrl();
   if (urlSeed !== null) {
+    const decks = decksFromUrl() ?? 1;
     clearSeedFromUrl();
-    return newGame(urlSeed);
+    return newGame(urlSeed, decks);
   }
-  return loadGame() ?? newGame(Math.floor(Math.random() * 1e9));
+  return loadGame() ?? newGame(Math.floor(Math.random() * 1e9), 1);
 }
 
 const RULES_HTML = marked.parse(rulesMarkdown) as string;
@@ -184,7 +195,7 @@ export function App() {
       saveGame(next);
     } else {
       clearGame();
-      setStats(recordResult(next.status));
+      setStats(recordResult(next.status, next.decks));
     }
   };
 
@@ -194,8 +205,8 @@ export function App() {
     commit(next);
   };
 
-  const restart = (newSeed?: number) => {
-    const g = newGame(newSeed ?? Math.floor(Math.random() * 1e9));
+  const restart = (newSeed?: number, decks?: number) => {
+    const g = newGame(newSeed ?? Math.floor(Math.random() * 1e9), decks ?? state.decks);
     setState(g);
     clearSelection();
     saveGame(g);
@@ -389,6 +400,7 @@ export function App() {
           onClose={() => setMenuOpen(false)}
           onNewGame={() => restart()}
           onPlaySeed={(seed) => restart(seed)}
+          onPlayDifficulty={(decks) => restart(undefined, decks)}
         />
       )}
     </div>
@@ -403,6 +415,7 @@ function MenuModal({
   onClose,
   onNewGame,
   onPlaySeed,
+  onPlayDifficulty,
 }: {
   state: GameState;
   stats: Stats;
@@ -411,13 +424,14 @@ function MenuModal({
   onClose: () => void;
   onNewGame: () => void;
   onPlaySeed: (seed: number) => void;
+  onPlayDifficulty: (decks: number) => void;
 }) {
   const [seedInput, setSeedInput] = useState("");
   const [copied, setCopied] = useState(false);
 
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(shareLink(state.seed));
+      await navigator.clipboard.writeText(shareLink(state.seed, state.decks));
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
@@ -461,6 +475,39 @@ function MenuModal({
               Play
             </button>
           </div>
+        </div>
+
+        <div className="menu-section">
+          <div className="menu-label">Difficulty — win a level to unlock the next</div>
+          <div className="difficulty">
+            {DIFFICULTY.map((d) => {
+              const locked = d.decks > stats.unlocked;
+              const current = d.decks === state.decks;
+              return (
+                <button
+                  key={d.decks}
+                  className={"level" + (current ? " current" : "") + (locked ? " locked" : "")}
+                  disabled={locked}
+                  onClick={() => onPlayDifficulty(d.decks)}
+                  title={`${d.decks} deck${d.decks > 1 ? "s" : ""}`}
+                >
+                  <span className="level-name">
+                    {locked ? "🔒 " : ""}
+                    {d.name}
+                  </span>
+                  <span className="level-decks">
+                    {d.decks} deck{d.decks > 1 ? "s" : ""}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {stats.unlocked < MAX_DECKS && (
+            <div className="unlock-hint">
+              Win on {DIFFICULTY[stats.unlocked - 1].name} to unlock{" "}
+              {DIFFICULTY[stats.unlocked].name}.
+            </div>
+          )}
         </div>
 
         <div className="menu-section">
@@ -672,6 +719,7 @@ function EnemyCard({
     (enemy.role === "lich" ? " lich" : "") +
     (armed && killable ? " killable" : "") +
     (armed && !killable ? " tough" : "");
+  const value = enemy.role === "lich" ? enemy.hp : effectiveValue(enemy);
   return (
     <div
       className={cls}
@@ -682,11 +730,27 @@ function EnemyCard({
       aria-label={enemyAria(enemy)}
     >
       <div className="name">{name}</div>
-      <div className="val">{enemy.role === "lich" ? enemy.hp : effectiveValue(enemy)}</div>
+      <MiniCard card={enemy.card} />
+      <div className="val">
+        {value}
+        {enemy.role === "lich" ? <span className="val-hp"> HP</span> : null}
+      </div>
       <div className="tokens">
         {enemy.festering > 0 && <span className="fester">✦{enemy.festering} </span>}
         {enemy.splash > 0 && <span className="splash">♨{enemy.splash}</span>}
       </div>
+    </div>
+  );
+}
+
+/** A small playing-card face — the actual card an enemy was flipped from. */
+function MiniCard({ card }: { card: Card }) {
+  const red = card.suit && RED_SUITS.has(card.suit);
+  const sym = card.suit ? SUIT_SYMBOL[card.suit] : "★";
+  return (
+    <div className={"minicard" + (red ? " red" : "")} aria-hidden="true">
+      <span className="mc-corner">{rankStr(card)}</span>
+      <span className="mc-pip">{sym}</span>
     </div>
   );
 }

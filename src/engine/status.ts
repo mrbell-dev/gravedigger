@@ -3,10 +3,12 @@
 import type { GameState } from "./types";
 import { isAce } from "./cards";
 import { toolValue } from "./cards";
+import { maxStamina } from "./balance";
 
-export function victoryTier(stamina: number): "gold" | "silver" | "bronze" {
-  if (stamina >= 8) return "gold";
-  if (stamina >= 5) return "silver";
+export function victoryTier(stamina: number, decks = 1): "gold" | "silver" | "bronze" {
+  const cap = maxStamina(decks);
+  if (stamina >= 0.8 * cap) return "gold";
+  if (stamina >= 0.5 * cap) return "silver";
   return "bronze";
 }
 
@@ -20,7 +22,11 @@ export function checkWinLoss(state: GameState): void {
   }
   // Win: the deck is empty and the row has been fully cleared.
   if (state.deck.length === 0 && state.row.length === 0) {
-    state.status = { kind: "won", tier: victoryTier(state.stamina), stamina: state.stamina };
+    state.status = {
+      kind: "won",
+      tier: victoryTier(state.stamina, state.decks),
+      stamina: state.stamina,
+    };
   }
 }
 

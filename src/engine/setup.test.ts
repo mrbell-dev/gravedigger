@@ -28,6 +28,23 @@ describe("setup", () => {
     expect(new Set(ids).size).toBe(54); // all unique
   });
 
+  it("multi-deck: N decks => 54*N unique cards, still exactly one Lich", () => {
+    for (const decks of [2, 3, 5]) {
+      const s = setup(7, decks);
+      expect(s.decks).toBe(decks);
+      const ids = allCards(s).map((c) => c.id);
+      expect(ids).toHaveLength(54 * decks);
+      expect(new Set(ids).size).toBe(54 * decks); // all unique across decks
+      // The Lich is a King (rank 13) from one of the decks, e.g. "H13#2".
+      expect(/^[SCHD]13#\d+$/.test(s.lichId)).toBe(true);
+    }
+  });
+
+  it("clamps deck count to 1–5", () => {
+    expect(setup(1, 0).decks).toBe(1);
+    expect(setup(1, 9).decks).toBe(5);
+  });
+
   it("opening hand holds 5 non-Joker cards", () => {
     for (const seed of [1, 2, 3, 99, 12345, 777]) {
       const s = setup(seed);

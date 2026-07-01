@@ -5,8 +5,7 @@ import type { GameState, Card } from "./types";
 import { isAce, isJoker } from "./cards";
 import { makeEnemy } from "./enemy";
 import { checkWinLoss, isStuck } from "./status";
-
-const MAX_STAMINA = 10;
+import { maxStamina } from "./balance";
 
 export function log(state: GameState, text: string): void {
   state.log.push({ turn: state.turn, phase: state.phase, text });
@@ -17,7 +16,7 @@ export function rowLimit(state: GameState): number {
 }
 
 export function gainStamina(state: GameState, amount: number): void {
-  state.stamina = Math.min(MAX_STAMINA, state.stamina + amount);
+  state.stamina = Math.min(maxStamina(state.decks), state.stamina + amount);
 }
 
 /** Advance the game until it needs player input (ACT / reorder) or reaches a terminal state. */

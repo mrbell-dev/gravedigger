@@ -3,30 +3,30 @@
 import type { Card, GameState } from "./types";
 import { fullDeck, isKing, isJoker } from "./cards";
 import { makeRng, shuffle, randInt, type Rng } from "./rng";
+import { maxStamina } from "./balance";
 
-const STARTING_STAMINA = 10;
 const OPENING_HAND = 5;
 
-/** Create a fresh, reproducible game from a numeric seed. */
-export function setup(seed: number): GameState {
+/** Create a fresh, reproducible game from a numeric seed and deck count (1–5). */
+export function setup(seed: number, decks = 1): GameState {
+  const deckCount = Math.max(1, Math.min(5, Math.floor(decks)));
   const rng = makeRng(seed);
 
-  const all = fullDeck();
-  const kings = all.filter(isKing);
-  const nonKings = all.filter((c) => !isKing(c)); // 48 standard + 2 jokers = 50
+  const all = fullDeck(deckCount);
+  const kings = all.filter(isKing); // 4 per deck
+  const nonKings = all.filter((c) => !isKing(c));
 
-  // Step 2: choose one King at random to be the Lich.
+  // Choose exactly ONE King (across all decks) to be the Lich — still a single boss.
   const lich = kings[randInt(rng, kings.length)];
-  const otherKings = kings.filter((k) => k.id !== lich.id); // the 3 Warlords-to-be
+  const otherKings = kings.filter((k) => k.id !== lich.id); // the rest become Warlords
 
-  // Step 3–4: shuffle the 50, then shuffle the 3 non-Lich Kings back in => 53 cards.
-  const deck53 = shuffle([...nonKings, ...otherKings], rng);
-
-  // Step 5: bury the Lich face-down at a random spot in the bottom third (~last 17).
-  const deck = buryLich(deck53, lich, rng); // 54 cards, index 0 = TOP
+  // Shuffle everything but the Lich, then bury the Lich in the bottom third.
+  const shuffled = shuffle([...nonKings, ...otherKings], rng);
+  const deck = buryLich(shuffled, lich, rng); // index 0 = TOP
 
   const state: GameState = {
     seed,
+    decks: deckCount,
     lichId: lich.id,
     turn: 1,
     phase: "flip",
@@ -34,7 +34,7 @@ export function setup(seed: number): GameState {
     hand: [],
     row: [],
     discard: [],
-    stamina: STARTING_STAMINA,
+    stamina: maxStamina(deckCount),
     ironFlipUsed: false,
     skipFlipNextTurn: false,
     skipSuffer: false,

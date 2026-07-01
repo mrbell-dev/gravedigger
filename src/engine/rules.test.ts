@@ -19,6 +19,7 @@ const lichEnemy = (): Enemy => makeEnemy({ id: "KH", kind: "standard", suit: "H"
 
 const base = (o: Partial<GameState>): GameState => ({
   seed: 0,
+  decks: 1,
   lichId: "KH",
   turn: 1,
   phase: "act",

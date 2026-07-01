@@ -21,8 +21,8 @@ export { rowLimit } from "./turn";
 export { seedFromString } from "./rng";
 
 /** Start a new, reproducible game and advance to the first decision point. */
-export function newGame(seed: number): GameState {
-  const s = setup(seed);
+export function newGame(seed: number, decks = 1): GameState {
+  const s = setup(seed, decks);
   run(s);
   return s;
 }

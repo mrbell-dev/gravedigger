@@ -47,6 +47,7 @@ export type Status =
 /** The entire game state. Everything needed to render or resume is here. */
 export interface GameState {
   seed: number;
+  decks: number; // how many 54-card decks were shuffled in (1–5) — the difficulty knob
   lichId: string; // which King is the Lich (buried in the deck at setup)
   turn: number; // increments each full turn; starts at 1
   phase: Phase;

@@ -135,7 +135,7 @@ body {
   gap: 10px;
   justify-content: center;
   flex-wrap: wrap;
-  min-height: 118px;
+  min-height: 150px;
   align-items: center;
 }
 .enemy {
@@ -163,11 +163,94 @@ body {
   font-size: 12px;
   color: var(--ink);
 }
+/* Mini playing-card face inside an enemy slot (the card it was flipped from). */
+.minicard {
+  width: 42px;
+  height: 58px;
+  margin: 3px auto 2px;
+  border-radius: 6px;
+  background: linear-gradient(160deg, #f3e9d2, #d9c9a4);
+  border: 1px solid #b39a68;
+  color: #241a12;
+  position: relative;
+  box-shadow: 0 2px 5px var(--shadow);
+}
+.minicard.red {
+  color: var(--blood);
+}
+.minicard .mc-corner {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+}
+.minicard .mc-pip {
+  position: absolute;
+  bottom: 4px;
+  right: 5px;
+  font-size: 18px;
+  line-height: 1;
+}
 .enemy .val {
-  font-size: 26px;
+  font-size: 21px;
   color: var(--gold-bright);
   font-weight: 600;
   line-height: 1.1;
+}
+.enemy .val-hp {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+/* --- Difficulty ladder --- */
+.difficulty {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.level {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: inherit;
+  background: #191009;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.level:hover:not(:disabled) {
+  border-color: var(--gold);
+}
+.level.current {
+  border-color: var(--gold-bright);
+  box-shadow: inset 0 0 0 1px var(--gold);
+}
+.level.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.level-name {
+  font-size: 15px;
+}
+.level:nth-child(5):not(.locked) .level-name {
+  color: #d0664f;
+}
+.level-decks {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+.unlock-hint {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 8px;
+  text-align: center;
 }
 .enemy .tokens {
   font-size: 11px;

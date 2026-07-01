@@ -50,8 +50,8 @@ function chooseMove(s: GameState): Action | undefined {
   return actions.find((a) => a.type === "rest") ?? actions[0];
 }
 
-function playGame(seed: number): GameState {
-  let s = newGame(seed);
+function playGame(seed: number, decks: number): GameState {
+  let s = newGame(seed, decks);
   let steps = 0;
   while (s.status.kind === "playing" && steps < 5000) {
     if (s.pending) {
@@ -67,6 +67,7 @@ function playGame(seed: number): GameState {
 }
 
 const N = Number(process.argv[2] ?? 5000);
+const DECKS = Number(process.argv[3] ?? 1);
 const tally = {
   won: 0,
   gold: 0,
@@ -78,7 +79,7 @@ const tally = {
 };
 
 for (let seed = 0; seed < N; seed++) {
-  const s = playGame(seed);
+  const s = playGame(seed, DECKS);
   if (s.status.kind === "won") {
     tally.won++;
     tally[s.status.tier]++;
@@ -91,7 +92,7 @@ for (let seed = 0; seed < N; seed++) {
 }
 
 const pct = (n: number) => ((100 * n) / N).toFixed(1) + "%";
-console.log(`\nGravedigger balance — ${N} games, heuristic bot\n${"-".repeat(40)}`);
+console.log(`\nGravedigger balance — ${N} games, ${DECKS} deck(s), heuristic bot\n${"-".repeat(40)}`);
 console.log(`Win rate        ${pct(tally.won)}  (${tally.won})`);
 console.log(`  Gold  (8-10)  ${pct(tally.gold)}`);
 console.log(`  Silver (5-7)  ${pct(tally.silver)}`);
