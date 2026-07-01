@@ -663,6 +663,12 @@ function HelpModal({ onClose }: { onClose: () => void }) {
 function ChroniclePanel({ log }: { log: GameState["log"] }) {
   const [page, setPage] = useState(0); // 0 = Chronicle, 1 = Quick Reference
   const startX = useRef<number | null>(null);
+  const logRef = useRef<HTMLDivElement>(null);
+
+  // Keep the newest entry visible in the fixed-height box.
+  useEffect(() => {
+    if (page === 0 && logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [log.length, page]);
 
   const onTouchStart = (e: RTouchEvent) => {
     startX.current = e.touches[0].clientX;
@@ -682,8 +688,14 @@ function ChroniclePanel({ log }: { log: GameState["log"] }) {
       </div>
       <div className="panel-swipe" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         {page === 0 ? (
-          <div className="log" role="log" aria-live="polite" aria-labelledby="chronicle-label">
-            {log.slice(-10).map((ev, i) => (
+          <div
+            className="log"
+            ref={logRef}
+            role="log"
+            aria-live="polite"
+            aria-labelledby="chronicle-label"
+          >
+            {log.slice(-12).map((ev, i) => (
               <div className="line" key={i}>
                 {ev.text}
               </div>

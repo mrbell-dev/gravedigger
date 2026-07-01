@@ -429,8 +429,7 @@ body {
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 8px 12px;
-  max-height: clamp(110px, 20vh, 185px);
-  min-height: clamp(70px, 11vh, 118px);
+  height: clamp(112px, 17vh, 166px);
   overflow-y: auto;
   font-size: 13px;
   color: var(--muted);
@@ -484,8 +483,7 @@ body {
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 8px 12px;
-  max-height: clamp(110px, 20vh, 185px);
-  min-height: clamp(70px, 11vh, 118px);
+  height: clamp(112px, 17vh, 166px);
   overflow-y: auto;
   font-size: 13px;
 }
