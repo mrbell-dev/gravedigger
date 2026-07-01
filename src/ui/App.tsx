@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as RKeyEvent } from "react";
 import { marked } from "marked";
 import "./styles.css";
 import rulesMarkdown from "../engine/RULES.md?raw";
@@ -87,11 +87,43 @@ function initialState(): GameState {
 const RULES_HTML = marked.parse(rulesMarkdown) as string;
 
 const RED_SUITS = new Set(["H", "D"]);
+const SUIT_FULL: Record<string, string> = { S: "Spades", C: "Clubs", H: "Hearts", D: "Diamonds" };
+const RANK_FULL: Record<number, string> = {
+  1: "Ace",
+  11: "Jack",
+  12: "Queen",
+  13: "King",
+};
 
 function rankStr(c: Card): string {
   if (isJoker(c)) return "★";
   const r = c.rank!;
   return r === 1 ? "A" : r === 11 ? "J" : r === 12 ? "Q" : r === 13 ? "K" : String(r);
+}
+
+/** Fire a click when Enter/Space is pressed on a non-button element. */
+const onActivate = (fn: () => void) => (e: RKeyEvent) => {
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    fn();
+  }
+};
+
+function cardAria(c: Card): string {
+  if (isJoker(c)) return "Joker — an Omen";
+  const rank = RANK_FULL[c.rank!] ?? String(c.rank);
+  const suit = SUIT_FULL[c.suit!];
+  if (isAce(c)) return `${rank} of ${suit}, a Ritual card`;
+  return `${rank} of ${suit}, a ${SUIT_NAME[c.suit!]} tool`;
+}
+
+function enemyAria(e: Enemy): string {
+  if (e.role === "lich") return `The Lich, ${e.hp} hit points remaining`;
+  const name = e.role === "warlord" ? "Warlord" : enemyLabel(e.base);
+  const parts = [`${name}, value ${effectiveValue(e)}`];
+  if (e.festering > 0) parts.push(`${e.festering} festering`);
+  if (e.splash > 0) parts.push(`${e.splash} splash damage`);
+  return parts.join(", ");
 }
 
 export function App() {
@@ -307,8 +339,10 @@ export function App() {
         </button>
       </div>
 
-      <div className="hdr">Chronicle</div>
-      <div className="log">
+      <div className="hdr" id="chronicle-label">
+        Chronicle
+      </div>
+      <div className="log" role="log" aria-live="polite" aria-labelledby="chronicle-label">
         {state.log.slice(-7).map((ev, i) => (
           <div className="line" key={i}>
             {ev.text}
@@ -391,7 +425,7 @@ function MenuModal({
 
   return (
     <div className="overlay" onClick={onClose}>
-      <div className="modal menu" onClick={(e) => e.stopPropagation()}>
+      <div className="modal menu" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
         <h2>The Sexton's Ledger</h2>
 
         <div className="menu-section">
@@ -484,7 +518,7 @@ function Toggle({ label, on, onClick }: { label: string; on: boolean; onClick: (
 function HelpModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="overlay" onClick={onClose}>
-      <div className="modal help" onClick={(e) => e.stopPropagation()}>
+      <div className="modal help" role="dialog" aria-modal="true" aria-label="How to play" onClick={(e) => e.stopPropagation()}>
         <div className="help-body" dangerouslySetInnerHTML={{ __html: RULES_HTML }} />
         <button className="btn" onClick={onClose} style={{ marginTop: 14 }}>
           Close
@@ -554,7 +588,14 @@ function EnemyCard({
     (armed && killable ? " killable" : "") +
     (armed && !killable ? " tough" : "");
   return (
-    <div className={cls} onClick={onClick}>
+    <div
+      className={cls}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={onActivate(onClick)}
+      aria-label={enemyAria(enemy)}
+    >
       <div className="name">{name}</div>
       <div className="val">{enemy.role === "lich" ? enemy.hp : effectiveValue(enemy)}</div>
       <div className="tokens">
@@ -590,6 +631,11 @@ function HandCard({
         "card" + (red ? " red" : "") + (isAce(card) ? " ace" : "") + (selected ? " selected" : "")
       }
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={onActivate(onClick)}
+      aria-label={cardAria(card)}
+      aria-pressed={selected}
       title={card.suit ? `${SUIT_NAME[card.suit]} (${card.suit})` : "Joker"}
     >
       <div className="r">{rankStr(card)}</div>
@@ -627,7 +673,7 @@ function ReorderModal({
 
   return (
     <div className="overlay">
-      <div className="modal">
+      <div className="modal" role="dialog" aria-modal="true">
         <h2>{isSalt ? "Salt's Sight" : "The Trickster"}</h2>
         <p>
           These are the next cards to be flipped (left = top).{" "}
@@ -656,7 +702,7 @@ function SaltRemoveModal({
   const festered = state.row.filter((e) => e.festering > 0);
   return (
     <div className="overlay">
-      <div className="modal">
+      <div className="modal" role="dialog" aria-modal="true">
         <h2>Salt</h2>
         <p>Choose an enemy to cleanse of one festering token.</p>
         <div className="row" style={{ margin: "14px 0" }}>
@@ -686,7 +732,7 @@ function DiscardModal({
     );
   return (
     <div className="overlay">
-      <div className="modal">
+      <div className="modal" role="dialog" aria-modal="true">
         <h2>Overflow</h2>
         <p>
           Your hand holds {state.hand.length}. Choose {need} card{need > 1 ? "s" : ""} to let fall.
@@ -709,7 +755,7 @@ function GameOver({ state, onRestart }: { state: GameState; onRestart: () => voi
   const won = s.kind === "won";
   return (
     <div className="overlay">
-      <div className="modal">
+      <div className="modal" role="dialog" aria-modal="true">
         <h2>{won ? "The Dead Rest" : "Overrun"}</h2>
         {won && s.kind === "won" ? (
           <>

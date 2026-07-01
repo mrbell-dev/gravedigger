@@ -12,8 +12,13 @@ card game. Fully client-side, installable as a PWA, works offline.
 **SHIPPED (Phase 12, early):** Live at https://mrbell-dev.github.io/gravedigger/ · repo
 github.com/mrbell-dev/gravedigger (public, proprietary LICENSE, @Pavornic credited). CI auto-deploys
 on push to `main` (`.github/workflows/deploy.yml`); verified live render. Order was 10 → 9 → 11 → 12,
-but 12 was pulled forward for a shareable review link. STILL PENDING: **Phase 9 (juice)** and
-**Phase 11 (QA/a11y)**.
+but 12 was pulled forward for a shareable review link. **Phase 9 (juice) DONE** — procedural Web
+Audio (8 cues, off by default), haptics (on; no-ops on iOS Safari which lacks the Vibration API),
+entrance/flash animations behind prefers-reduced-motion, in-menu Sound/Haptics toggles. **Phase 11
+(QA/a11y) DONE** — fast-check property/fuzz tests (300 randomized games, invariants after every move
++ determinism; 40 tests total), keyboard-operable cards/enemies (role/tabindex/Enter-Space),
+aria-labels, live-region Chronicle, dialog roles, focus-visible, colorblind-safe suit shapes.
+`scripts/a11y-check.mjs` (9/9). **ALL PLANNED PHASES COMPLETE.**
 
 
 **Tests:** 36 passing. **Balance sim:** 4000 games, 0 unfinished (no logic loops); heuristic bot win rate ~18.6% (Gold 8.0% / Silver 5.9% / Bronze 4.7%), losses 62% stamina / 19% no-move. Intentionally hard; bot is only greedy, revisit later.

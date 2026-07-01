@@ -18,6 +18,17 @@
   box-sizing: border-box;
 }
 
+/* Keyboard focus ring (only shows for keyboard users, not mouse/touch). */
+:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.card:focus-visible,
+.enemy:focus-visible {
+  outline-offset: 3px;
+}
+
 html,
 body,
 #root {

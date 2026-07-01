@@ -87,7 +87,7 @@ export function InstallPrompt() {
 
       {open && (
         <div className="overlay" onClick={() => setOpen(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal" role="dialog" aria-modal="true" aria-label="Install Gravedigger" onClick={(e) => e.stopPropagation()}>
             <h2>Install Gravedigger</h2>
             <p>
               Add it to your home screen for a full-screen experience that also works with no signal.
